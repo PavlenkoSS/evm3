@@ -37,6 +37,10 @@ int main(int nargs, char** args)
 	double* M;
 	double* E;
 	double* mem2;
+	double* Sins;
+	double* Coss;
+	Sins = new double [n];
+	Coss = new double[n];
 	M = new double[n * n];
 	mem2 = new double[4*n*nthreads];
 	E = new double[n * n];	
@@ -67,6 +71,9 @@ int main(int nargs, char** args)
 	argus[0].thread_num = 0;
 	argus[0].numthr= nthreads;
 	argus[0].exinum = 0;
+	argus[0].Coss = Coss;
+	argus[0].Sins = Sins;
+	argus[0].res=0;
 	//cout << "here" << endl;
 	//cout << argus[0].erc << ' ' << argus[0].to_finish <<endl;
 	long int tm = get_full_time();
@@ -88,38 +95,18 @@ int main(int nargs, char** args)
 		delete[]mem2;
 		return -2;
 	}
-	//double end_time = clock();
-	//cout <<"Time of inversing = " << (-start_time + end_time)/CLOCKS_PER_SEC << endl;
-	//cout << "paral = " << endl;
-	// if (outMat1(M, n, m) == -2)
-	// {
-	// 	delete[]E;
-	// 	delete[]M;
-	// 	delete[]mem2;
-	// 	return -2;
-	// }
-	//outMat1(E,n,m);
-	//cout << "time for paral " << tm/100 << endl;
+;
 	fulMat(M, n, k, string(filename));
 	//cout << "sins " << smartNormMat(M, E, n)<< endl;
-	double residual =  smartNormMat(M, E, n);
 	double elapsed = double(tm)/100;
-	fulMat(M, n, k, string(filename));
-	idMat(E, n);
-		tm = get_full_time();
-		 
-	//MatInverse(M,E,mem2,n);
-	//tm= get_full_time()-tm;
-	//cout << " not paral " << endl;
-	//cout << "time for not paral " << tm/100 << endl;
-	//fulMat(M, n, k, string(filename));
-	//cout << "sins " <<smartNormMat(M, E, n)<< endl;
+	fulMat(argus[0].matrix, n, k, string(filename));
+			argus[0].thread_num = 0;
+
+	normThread(argus,nthreads);
+
+	double residual = argus[0].res;
+
 	printf("%s : residual = %e elapsed = %.2f s = %d n = %d m = %d p = %d\n",args[0], residual, elapsed, k, n, m, nthreads);
-
-	//outMat1(M, n, m);
-	//cout << "time for not paral " << tm << endl;
-	//cout << "ANS = ";
-
 	delete[]M;
 	delete[]E;
 	delete[]mem2;

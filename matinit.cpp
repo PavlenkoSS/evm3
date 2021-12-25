@@ -249,6 +249,7 @@ double smartNormMat(double (*mat1), double (*mat2), int n)
 	double A=0, max =0;
 	for (int i = 0; i < n; i++)
 	{
+		A=0;
 		for (int j = 0; j < n; j++)
 		{
 			a = 0;
@@ -256,13 +257,13 @@ double smartNormMat(double (*mat1), double (*mat2), int n)
 			{
 				a = a + (mat1[i * n + k] * mat2[k * n + j]);
 			}
-			//cout << "i " << i << " j " << j << ' ' << a << endl;
 			if(i==j)
 			{
 				a -= 1;
 			}
 			A += abs(a);
 		}
+
 		if (A>max)
 		{
 			max = A;

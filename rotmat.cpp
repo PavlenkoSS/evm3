@@ -289,8 +289,6 @@ void * trueUptriangleMat(void *pa)
 	// локальные переменные, чтоб быстрее ехало
 	double *mat = pargs->matrix;
 	double *tam = pargs->tamrix;
-	double *mm = pargs ->mem;
-	//double m1,m2,m3,m4;
 	
 	double x,y, sq, Cos, Sin;
 	int i,j, j1;
@@ -318,116 +316,84 @@ void * trueUptriangleMat(void *pa)
 
 	int L = (n-n%P)*(K-1)/P; // левая граница для потока ( L <= ... )
 	//int i_hat = 0;
-	mtx.lock();
-	cout << "K = " << K << ' ' << L << ' ' << R << endl;
-	mtx.unlock();
+	// mtx.lock();
+	// cout << "K = " << K << ' ' << L << ' ' << R << endl;
+	// mtx.unlock();
 	synchronize((*pargs).total_threads);
 	i=L;
-	// к верхнетреугольной вращениями 
-	for (i = 0; i < n-1 ; i++)
+
+	// к верхнетреугольной вращениями
+	for (i = 0; i < n-1 ; i++) // бежит вправо 
 	{
-		for (j = i+1; j < n; j++)
+		synchronize(P);
+		if(pargs->erc!=0)
 		{
-			synchronize(P);
- 			int I,J;
-			I = i;
-			J = j;
-			x = mat[I * n + I];
-			y = mat[J * n + I];
-			sq = sqrt(x * x + y * y);
-			Cos = x / sq;
-			Sin = -y / sq;
-			bool todate = true;
- 			if (sq > 1e-15*eps)
+			return 0;
+		}
+		if(K==1)
+		{
+			for (j = i+1; j < n; j++) // бежит вниз и считает синусы
 			{
-			//cout << K << " wait for sync 1" << endl;
-			//synchronize(P);
-			//cout << K << " synced 1" << endl;
-				for (j1 = L; j1 < R; j1++)
+				int I,J;
+				I = i;
+				J = j;
+				x = mat[I * n + I];
+				y = mat[J * n + I];
+				sq = sqrt(x * x + y * y);
+				if(sq<1e-15*eps)
 				{
-					  mm[4*j1] = (Cos) * mat[I * n + j1] - (Sin) * mat[J * n + j1];
-					  mm[1 + 4*j1] = (Sin) * mat[I * n + j1] + (Cos) * mat[J * n + j1];
-					  mm[2 + 4*j1] = (Cos) * tam[I * n + j1] - (Sin) * tam[J * n + j1];
-					  mm[3 + 4*j1] = (Sin) * tam[I * n + j1] + (Cos) * tam[J * n + j1];
-					//mtx.lock();
-					//cout << n << endl;
-					//cout << "K = " << K << "   " << I << ' ' << j1 << "  "<< I * n + j1 << "   " << J << ' ' << j1  << "  " << J * n + j1 << endl;
-					//mtx.unlock();
-					
-					/*m1 = (Cos) * mat[I * n + j1] - (Sin) * mat[J * n + j1];
-					m2 = (Sin) * mat[I * n + j1] + (Cos) * mat[J * n + j1];
-					m3 = (Cos) * tam[I * n + j1] - (Sin) * tam[J * n + j1];
-					m4 = (Sin) * tam[I * n + j1] + (Cos) * tam[J * n + j1];
-					
-					mat[I * n + j1] = m1;
-					mat[J * n + j1] = m2;
-					tam[I * n + j1] = m3;
-					tam[J * n + j1] = m4;*/
+					pargs -> erc = 1;
+					break;
 				}
-				  /*for (int j1 = L; j1 < R; j1++)
-				  {
-				  	mat[I * n + j1] = mm[4*j1];
-				  	//mat[J * n + j1] = mm[1 + 4*j1];
-				  	tam[I * n + j1] = mm[2+4*j1];
-				  	//tam[J * n + j1] = mm[3+ 4*j1];
-				  }*/
-				todate =true;
-			}else
-			{
-				(*pargs).erc = 1;
-				return 0;
-			}
+				Cos = x / sq;
+				Sin = -y / sq;
 
-			//synchronize(pargs->total_threads);
-			//cout << K << " wait for sync 2" << endl;
-			synchronize(P);
-			//cout << K << " synced 2" << endl;
-			
-			if(todate)
-			{
-				// for (int j1 = L; j1 < R; j1++)
-				// {
-				// 	// mm[4*j1] = (Cos) * mat[I * n + j1] - (Sin) * mat[J * n + j1];
-				// 	// mm[1 + 4*j1] = (Sin) * mat[I * n + j1] + (Cos) * mat[J * n + j1];
-				// 	mm[2 + 4*j1] = (Cos) * tam[I * n + j1] - (Sin) * tam[J * n + j1];
-				// 	mm[3 + 4*j1] = (Sin) * tam[I * n + j1] + (Cos) * tam[J * n + j1];
-				// }
+				pargs->Coss[j] = Cos;
+				pargs->Sins[j] = Sin;
 
-
-				  for ( j1 = L; j1 < R; ++j1)
-				  {
-				  	mat[I * n + j1] = mm[4*j1];
-				  	mat[J * n + j1] = mm[1 + 4*j1];
-				  	tam[I * n + j1] = mm[2+4*j1];
-				  	tam[J * n + j1] = mm[3+ 4*j1];
-				  }
-
-
-				// for (int j1 = L; j1<R; j1++)
-				// {
-				// 	mat[I * n + j1] = m1;
-				// 	mat[J * n + j1] = m2;
-				// 	tam[I * n + j1] = m3;
-				// 	tam[J * n + j1] = m4;
-				// }
-			}
-
-			//synchronize((*pargs).total_threads);
-			//synchronize(P);
-			if(pargs -> erc != 0)
-			{
-				return 0;
+				mat[I * n + I] = x*Cos - y*Sin;
+				mat[J * n + I] = x*Sin + y*Cos;
+				//cout << I << ' ' << J << "   " << Sin << ' ' << Cos << endl;
 			}
 			if(abs(mat [i * n + i] ) < eps * 1e-15)
 			{
-				(*pargs).erc = 1;
-				return 0;
+				pargs->erc = 1;
 			}
 		}
 
+		synchronize(P);
+
+		if(pargs->erc!=0)
+		{
+			return 0;
+		}
+		
+		for (j = i+K; j < n; j+=P) // прыгает вправо
+		{
+			for (j1 = i+1; j1 < n; j1++) // бежит вниз
+			{
+				Cos = pargs->Coss[j1];
+				Sin = pargs->Sins[j1];
+				x = mat[i * n + j];
+				y = mat[j1 * n + j];
+				mat[i * n + j] = x*Cos - y*Sin;
+				mat[j1 * n + j] = x*Sin + y*Cos;
+			}		
+		}
+		for(j = K-1;j<n;j= j+P)
+		{
+			for(j1 = i+1; j1<n;j1++)
+			{
+				Cos = pargs->Coss[j1];
+				Sin = pargs->Sins[j1];
+				x = tam[i * n + j];
+				y = tam[j1 * n + j];
+				tam[i * n + j] = x*Cos - y*Sin;
+				tam[j1 * n + j] = x*Sin + y*Cos;
+			}
+		}
 	}
 
-	//(*pargs).total_threads--;
 	if(abs(mat[(n-1) * n + n-1] ) < eps* 1e-15)
 	{
 		(*pargs).erc = 1;
@@ -436,6 +402,7 @@ void * trueUptriangleMat(void *pa)
 
 	if(pargs -> erc != 0)
 	{
+		cout << 5555 << endl;
 		return 0;
 	}
 	pargs ->total_threads = P;
@@ -457,18 +424,28 @@ void * trueUptriangleMat(void *pa)
 		mat[i*n+i]=1;
 	}
 
-	for (int J = n - 1; J > 0; J--)
+	// for (int J = n - 1; J > 0; J--) // влево
+	// {
+	// 	for (int I = J - 1; I > -1; I--) // вверх
+	// 	{
+	// 		for (int j = 0; j < n; j++) // вправо
+	// 		{
+	// 			tam[I * n + j] -= mat[I * n + J] * tam[J * n + j];
+	// 		}
+	// 	}
+	// }
+	for (int J = n - 1; J > 0; J--) // влево
 	{
-		for (int I = J - 1; I > -1; I--)
+		for (int j = K-1; j < n; j+=P) // вправо
 		{
-			for (int j = L; j < R; j++)
+			for (int I = J - 1; I > -1; I--) // вверх
 			{
 				tam[I * n + j] -= mat[I * n + J] * tam[J * n + j];
 			}
-			synchronize(P);
-
 		}
+		synchronize(P);
 	}
+
 	return 0;	
 }
 ///////////////////////////////////////////////////
@@ -495,20 +472,7 @@ int endSubUptriangleMat(void *pa)
 			pargs->erc = 1;
 			return -1;
 		}
-		/*
-		for(i_hat = i; i_hat<min(i+P,n-1);i_hat++)
-		{
-			for (j = i_hat + 1; j < n; j++)
-			{
-				mat[j*n+i_hat]=0;
-			}
-			if (abs(mat[i_hat * n + i_hat]) < eps* 1e-15)
-			{
-				////cout << i << ' ' << mat[i * n + i] << endl;
-				return -2;
-			}
-		}
-		*/
+
 	}
 	
 	return 0;
@@ -545,6 +509,32 @@ int newMatInverse(void* pa, int nthreads)
 		////cout << "ERRRRRRRRR " << endl;
 		return -1;
 	}
+	return 0;
+}
+int normThread(void *pa, int nthreads)
+{
+	pthread_t * threads;
+	ARGS *pargs = (ARGS*)pa;
+	if (!(threads = (pthread_t*) malloc (nthreads * sizeof (pthread_t))))
+    {
+		pargs->erc = 20;
+        return 0;
+    }	
+	for (int i = 0; i < nthreads; i++)
+    {
+        if (pthread_create (threads + i, 0, multiSmartNormMat, pa))
+        {
+			pargs->erc = 10;
+            return 0;
+        }
+    }
+
+	for (int i = 0; i < nthreads; i++)
+    {
+        if (pthread_join (threads[i], 0))
+            fprintf (stderr, "cannot wait thread #%d!\n", i);
+    }
+	
 	return 0;
 }
 int uptriangleMat(double mat[], double(*tam), double(*m), int n)
@@ -661,6 +651,7 @@ int MatInverse(double mat[], double(*tam), double(*m), int n)
 			{
 				double Cos = x / sq;
 				double Sin = -y / sq;
+				//cout << I << ' ' << J << "   " << Sin << ' ' << Cos << endl;
 				for (int j1 = I; j1 < n; j1++)
 				{
 					m[j1] = (Cos) * mat[I * n + j1] - (Sin) * mat[J * n + j1];
@@ -693,6 +684,8 @@ int MatInverse(double mat[], double(*tam), double(*m), int n)
 			return -2;
 		}
 	}
+	outMat1(tam,n,5);
+
 	for (int i = n - 1; i > -1; i--)
 	{
 		for (int k = 0; k < n; k++)
@@ -736,4 +729,55 @@ double normByMaxMat(double(*mat), int n)
 		}
 	}
 	return max;
+}
+void * multiSmartNormMat(void *pa)
+{
+	ARGS *pargs = (ARGS*)pa;
+
+	int P = (*pargs).total_threads;
+	mtx.lock();
+	(*pargs).thread_num++;
+	int K = (*pargs).thread_num;
+	mtx.unlock();
+	double *mat1 = pargs->matrix;
+	double *mat2 = pargs->tamrix;
+	int n = (*pargs).n;
+	double a = 0;
+	double A=0;
+	pargs->res=0;
+	int i=0,j=0;
+	//double *m = pargs->mem;
+	double max=0;
+	for ( i = K-1; i < n; i+=P)
+	{
+		A=0;
+		for ( j = 0; j < n; j++)
+		{
+			a=0;
+			for (int k = 0; k < n; k++)
+			{
+				a = a + (mat1[i * n + k] * mat2[k * n + j]);
+			}
+			if(i==j)
+			{
+				a -= 1;
+			}
+			A += abs(a);
+		}
+		pargs->mem[i]=a;
+	}
+	synchronize(P);
+	if(K==1)
+	{
+		for( i=0;i<n;i++)
+		{
+			if(pargs->mem[i] > max)
+			{
+				max = pargs->mem[i];
+			}
+		}
+			pargs->res=max;
+
+	}
+	return 0;
 }

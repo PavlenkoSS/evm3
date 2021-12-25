@@ -29,9 +29,14 @@ int total_threads; /* всего задач */
 int numthr; // число для синхронизаций
 int exinum;
 int erc; // ошибка 
-bool to_finish; // когда можно начать завершающий цикл
+bool to_finish;// когда можно начать завершающий цикл 
+double *Sins; 
+double *Coss;
+double res;
+double max;
 } ARGS;
-
+int normThread(void *pa, int nthreads);
+void * multiSmartNormMat(void *pa);
 double normByMaxMat(double(*mat), int n);
 int uptriangleMat(double mat[], double(*tam), double(*m), int n);
 double normMat(double(*mat), double(*tam), int n);
