@@ -4,36 +4,53 @@ using namespace std;
 
 
 // размер  количество выводимых строк, потоки, формула
-int main(int nargs, char** args)
+
+int main1(int nargs, char** args)
 {
 	if (nargs < 5)
 	{
 		cout << "Not enought args: launch as following..." << endl;
+
+
 		return -1;
 	}
 
 	int n = 0;
 	int m = 0;
 	int k = 1;
-	ARGS * argus;
+	
 	int nthreads = 1;
 
 	char* filename = new char[128];
 	if (sscanf(args[1], "%d", &n) != 1 || sscanf(args[2], "%d", &m) != 1 || sscanf(args[3], "%d", &nthreads) != 1 || sscanf(args[4], "%d", &k) != 1)
 	{
+
+delete[] filename;
+
+
+
+
 		cout << "bad params" << endl;
 		return -1;
 	}
+
 	if(n==0)
-	{
+	{delete[] filename;
+
+
+
 		cout << "bad param n" << endl;
 		return -1;
 	}
 	if(args[5] == nullptr || sscanf(args[5], "%s", filename) != 1)
     {
         cout << "No filename" << endl;
+delete[] filename;
+
+
     	return -1;
     }
+
 	double* M;
 	double* E;
 	double* mem2;
@@ -48,13 +65,17 @@ int main(int nargs, char** args)
 
 	
 	if (fulMat(M, n, k, string(filename)) == -1)
-	{
+	{delete[] filename;
+delete[]Sins;
+delete[]Coss;
+delete[]E;	delete[]M;
+		delete[]mem2;
 		return -1;
 	}
 
 	cout << "M = " << endl;
 	outMat1(M, n,m);
-
+	ARGS * argus;
 	//double start_time = clock();
 	    if (!(argus = (ARGS*) malloc (sizeof (ARGS))))
     {
@@ -80,6 +101,9 @@ int main(int nargs, char** args)
 	if(newMatInverse(argus,nthreads)!=0)
 	{
 				cout << "UNINVERTABLE " << endl;
+delete[] filename;
+delete[]Sins;
+delete[]Coss;
 		delete[]E;
 		delete[]M;
 		delete[]mem2;
@@ -90,7 +114,11 @@ int main(int nargs, char** args)
 	if (argus[0].erc != 0)
 	{
 		cout << "UNINVERTABLE " << endl;
-		delete[]E;
+delete[] filename;
+delete[]Sins;
+delete[]Coss;
+	
+delete[]E;
 		delete[]M;
 		delete[]mem2;
 		return -2;
@@ -107,8 +135,33 @@ int main(int nargs, char** args)
 	double residual = argus[0].res;
 
 	printf("%s : residual = %e elapsed = %.2f s = %d n = %d m = %d p = %d\n",args[0], residual, elapsed, k, n, m, nthreads);
-	delete[]M;
+	
+
+delete[] filename;
+delete[]Sins;
+delete[]Coss;	
+delete[]M;
 	delete[]E;
 	delete[]mem2;
 	return 0;
 }
+
+
+
+int main(int nargs, char** args)
+{
+	while(true)
+{
+main1( nargs, args);
+}
+
+return 0;
+}
+
+
+
+
+
+
+
+

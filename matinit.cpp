@@ -67,10 +67,19 @@ int fulMat(double(*mat), int n, int k, string filename)
 		for (int i = 0; i < n; I++, i++)
 		{
 			J = 0;
+
 			for (int j = 0; j < n; J++, j++)
 			{
-				mat[i * n + j] = max(I + 1, J + 1);
+				if(j!=2)
+				{
+					mat[i * n + j] = max(I + 1, J + 1);
+}
+else
+{
+		mat[i * n + j] = 0;
+}
 			}
+
 		}
 		break;
 	case 3: // ��� ������� (������� ��� � �������)
@@ -218,8 +227,8 @@ int outMat1(double mat[], int n, int m)
 	{
 		for (int j = 0; j < m; j++)
 		{
-			cout << setprecision(3);
-			cout << mat[i * n + j] << ' ';
+			//cout << setprecision(3);
+			printf(" %10.3e", mat[i * n + j]) ;
 			//mat[i * n + j]  =0;
 		}
 		cout << endl;

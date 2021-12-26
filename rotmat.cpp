@@ -287,8 +287,8 @@ void * trueUptriangleMat(void *pa)
 	ARGS *pargs = (ARGS*)pa;
 
 	// локальные переменные, чтоб быстрее ехало
-	double *mat = pargs->matrix;
-	double *tam = pargs->tamrix;
+	double *mat = pargs->matrix;//
+	double *tam = pargs->tamrix;//
 	
 	double x,y, sq, Cos, Sin;
 	int i,j, j1;
@@ -325,11 +325,12 @@ void * trueUptriangleMat(void *pa)
 	// к верхнетреугольной вращениями
 	for (i = 0; i < n-1 ; i++) // бежит вправо 
 	{
-		synchronize(P);
-		if(pargs->erc!=0)
+		if(pargs -> erc != 0)
 		{
-			return 0;
+			break;
 		}
+		synchronize(P);
+		
 		if(K==1)
 		{
 			for (j = i+1; j < n; j++) // бежит вниз и считает синусы
@@ -360,14 +361,12 @@ void * trueUptriangleMat(void *pa)
 				pargs->erc = 1;
 			}
 		}
-
-		synchronize(P);
-
-		if(pargs->erc!=0)
-		{
-			return 0;
-		}
 		
+		synchronize(P);
+		if(pargs -> erc != 0)
+		{
+			break;
+		}
 		for (j = i+K; j < n; j+=P) // прыгает вправо
 		{
 			for (j1 = i+1; j1 < n; j1++) // бежит вниз
@@ -398,11 +397,11 @@ void * trueUptriangleMat(void *pa)
 	{
 		(*pargs).erc = 1;
 	}
+	
 	synchronize(P);
 
 	if(pargs -> erc != 0)
 	{
-		cout << 5555 << endl;
 		return 0;
 	}
 	pargs ->total_threads = P;
@@ -443,7 +442,7 @@ void * trueUptriangleMat(void *pa)
 				tam[I * n + j] -= mat[I * n + J] * tam[J * n + j];
 			}
 		}
-		synchronize(P);
+		//synchronize(P);
 	}
 
 	return 0;	
@@ -506,9 +505,12 @@ int newMatInverse(void* pa, int nthreads)
     }
 	if(pargs->erc !=0)
 	{
+
 		////cout << "ERRRRRRRRR " << endl;
 		return -1;
 	}
+
+delete[]threads;
 	return 0;
 }
 int normThread(void *pa, int nthreads)
