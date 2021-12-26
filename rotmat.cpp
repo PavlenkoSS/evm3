@@ -8,279 +8,7 @@ using namespace std;
 
 
 mutex mtx;
-bool multByRot(double (*mat), double (*tam), double (*m), int n, int i, int &j, int K, int P, int &s, int &S, int eps)
-{
-	//bool skp = false;
-		if(s<2*(K-1))
-			{
-				s++;
-				return true;
-				////cout << K << ' ' << "first" << endl;
-				////cout << "Case 1    "<< i << ' ' << j << ' ' << K << endl;
-			}
-		else if(j<n)
-			{
-				double Cos, Sin, sq,x,y;
-	int I,J;
-	I = i;
-    J = j;
-	x = mat[I * n + I];
-	y = mat[J * n + I];
-	sq = sqrt(x * x + y * y);
-	if (sq > 1e-15*eps)
-	{
-		Cos = x / sq;
-		Sin = -y / sq;
-		// здесь считаются новые значения для старой матрицы
-		for (int j1 = I; j1 < n; j1++)
-		{
-			m[4*(K-1)+j1] = (Cos) * mat[I * n + j1] - (Sin) * mat[J * n + j1];
-			m[(1+4*(K-1))*n + j1] = (Sin) * mat[I * n + j1] + (Cos) * mat[J * n + j1];
-		}
-		// здесь перезаписываются значения для старой матрицы
-		for (int j1 = I; j1 < n; j1++)
-		{
-			mat[I * n + j1] = m[4*(K-1)+j1];
-			mat[J * n + j1] = m[(1+4*(K-1))*n + j1];
-		}
-		// здесь считаются новые значения для новой (единичной) матрицы
-		for (int j1 = 0; j1 < n; j1++)
-		{
-			m[(2+4*(K-1))*n + j1] = (Cos) * tam[I * n + j1] - (Sin) * tam[J * n + j1];
-			m[(3+4*(K-1))*n + j1] = (Sin) * tam[I * n + j1] + (Cos) * tam[J * n + j1];
-		}
-		// здесь перезаписываются значения для новой (единичной) матрицы
-		for (int j1 = 0; j1 < n; j1++)
-		{
-			tam[I * n + j1] = m[(2+4*(K-1))*n+j1];
-			tam[J * n + j1] = m[(3+4*(K-1))*n + j1];
-		}	
-	}
-				//multByRot(pargs->matrix,pargs->tamrix,pargs->mem,n,i,j,K,eps);
-				////cout << K << ' ' << "sec" << endl;
-				j++;
-				//skp =true ;
-				////cout << "Case 2    "<< i << ' ' << j << ' ' << K << endl;
-				return true;
-			}
-		else if(S<P-K)
-			{
-				S++;
-				return true;
-				////cout << "Case      "<< i << ' ' << j << ' ' << K << endl;
-				////cout << K << ' ' << "third" << endl;
-			}
-		else
-			{
-				////cout << K << ' ' << "fourth" << endl;
-				return false;
-			}
-	
-	////outMat1(mat,n,6);
-	////cout << i << ' ' << j << endl;
-	return true;
-}
-void simpleMultByRot(double (*mat), double (*tam), double (*m), int n, int i, int j, int eps)
-{
-	double Cos, Sin, sq,x,y;
-	int I,J;
-	I = i;
-    J = j;
-	x = mat[I * n + I];
-	y = mat[J * n + I];
-	sq = sqrt(x * x + y * y);
-	if (sq > 1e-15*eps)
-	{
-		Cos = x / sq;
-		Sin = -y / sq;
-		// здесь считаются новые значения для старой матрицы
-		for (int j1 = I; j1 < n; j1++)
-		{
-			m[j1] = (Cos) * mat[I * n + j1] - (Sin) * mat[J * n + j1];
-			m[n + j1] = (Sin) * mat[I * n + j1] + (Cos) * mat[J * n + j1];
-		}
-		// здесь перезаписываются значения для старой матрицы
-		for (int j1 = I; j1 < n; j1++)
-		{
-			mat[I * n + j1] = m[j1];
-			mat[J * n + j1] = m[n + j1];
-		}
-		// здесь считаются новые значения для новой (единичной) матрицы
-		for (int j1 = 0; j1 < n; j1++)
-		{
-			m[2*n + j1] = (Cos) * tam[I * n + j1] - (Sin) * tam[J * n + j1];
-			m[3*n + j1] = (Sin) * tam[I * n + j1] + (Cos) * tam[J * n + j1];
-		}
-		// здесь перезаписываются значения для новой (единичной) матрицы
-		for (int j1 = 0; j1 < n; j1++)
-		{
-			tam[I * n + j1] = m[2*n+j1];
-			tam[J * n + j1] = m[3*n + j1];
-		}	
-	}
-	////outMat1(mat,n,6);
-	////cout << i << ' ' << j << endl;
-}
 
-// уже поток 
-void * subUptriangleMat(void *pa)
-{
-	ARGS *pargs = (ARGS*)pa;
-	//double x,y, sq, Cos, Sin;
-	int i,j, S, s;
-	bool cycle = true;
-	int P = pargs->total_threads;
-	double eps = normByMaxMat(pargs->matrix, pargs->n)+1e-16;
-	mtx.lock();
-	pargs->thread_num++;
-	int K = pargs->thread_num;
-	mtx.unlock();
-	int n = pargs->n;
-	//происходит назначение на столбец
-	for (i = K-1; i < n - n%P; i+=P)
-	{
-		// происходит назначение на строку
-		//операция со строкой K+1-го потока начинается после того как
-		// K- ый поток пройдет K+2 строчку
-		cycle =true;
-		//for (j = i+1; j < n; j++)
-		j= i+1;
-		s=0, S=0;
-		while(cycle)
-		{
-			/*if(s<2*(K-1))
-			{
-				s++;
-				////cout << K << ' ' << "first" << endl;
-			}else if(j<n)
-			{
-				multByRot(pargs->matrix,pargs->tamrix,pargs->mem,n,i,j,K,eps);
-				////cout << K << ' ' << "sec" << endl;
-				j++;
-			}
-			else if(S<P-K)
-			{
-				S++;
-				////cout << K << ' ' << "third" << endl;
-			}
-			else
-			{
-				////cout << K << ' ' << "fourth" << endl;
-				cycle = false;
-			}*/
-			cycle = multByRot(pargs->matrix,pargs->tamrix,pargs->mem,n,i,j,K,P,s,S,eps);
-			////cout << K <<  " ready for sync" << endl;
-			synchronize(P);
-			if(pargs -> erc != 0)
-			{
-				return 0;
-			}
-			////cout << K <<  " synced" << endl;
-		}
-		pargs->exinum++;
-		for (int j = i + 1; j < n; j++)
-		{
-			pargs->matrix[j*n+i]=0;
-		}
-		////cout << i << ' ' << pargs-> matrix [i * n + i] << endl;
-		if(abs(pargs-> matrix [i * n + i] ) < eps* 1e-15)
-		{
-			pargs->erc = 1;
-			//pargs->to_finish = true;
-			////cout << "ERROR ? "<< pargs-> erc << endl;
-			return 0;
-		}
-	}
-	i=i-1;
-	////cout << "ERROR ? "<< pargs-> erc << endl;
-	////cout << " I is " << i << endl;
-	if(i==n-n%P-1)
-	{
-		////cout << " entered to final " << endl;
-		for (i = n - n%P+1; i < n-1; i++)
-		{
-			for (j = i+1; j < n; j++)
-			{
-				if(pargs -> erc != 0)
-				{
-					return 0;
-				}
-				simpleMultByRot(pargs->matrix,pargs->tamrix,pargs->mem,n,i,j,eps);
-			}
-			for (int j = i + 1; j < n; j++)
-			{
-				pargs->matrix[j*n+i]=0;
-			}
-			if(abs(pargs-> matrix [i * n + i] ) < eps* 1e-15)
-			{
-				pargs->erc = 1;
-				return 0;
-			}
-			/*
-			for(i_hat = i; i_hat<min(i+P,n-1);i_hat++)
-			{
-				for (j = i_hat + 1; j < n; j++)
-				{
-					mat[j*n+i_hat]=0;
-				}
-				if (abs(mat[i_hat * n + i_hat]) < eps* 1e-15)
-				{
-					////cout << i << ' ' << mat[i * n + i] << endl;
-					return -2;
-				}
-			}
-			*/
-		}
-		//pargs->to_finish = true;
-	
-	}
-	return 0;	
-}
-int trueRotByMat(double (*mat), double (*tam), double Cos, double Sin, double sq, double (*m), int bndR, int bndL, int n, int I, int J,int P, double eps)
-{
-
-	bool todate = false;
-	if (sq > 1e-15*eps)
-	{
-		// здесь считаются новые значения для старой матрицы
-		for (int j1 = bndL; j1 < bndR; j1++)
-		{
-			m[j1] = (Cos) * mat[I * n + j1] - (Sin) * mat[J * n + j1];
-			m[n + j1] = (Sin) * mat[I * n + j1] + (Cos) * mat[J * n + j1];
-		}
-				for (int j1 = 0; j1 < bndR; j1++)
-		{
-			m[2*n + j1] = (Cos) * tam[I * n + j1] - (Sin) * tam[J * n + j1];
-			m[3*n + j1] = (Sin) * tam[I * n + j1] + (Cos) * tam[J * n + j1];
-		}
-		// здесь перезаписываются значения для старой матрицы
-
-		// здесь считаются новые значения для новой (единичной) матрицы
-		todate =true;
-	}
-	//P = 0;
-	synchronize(P);
-	if(todate)
-	{
-		for (int j1 = bndL; j1 < bndR; j1++)
-		{
-			mat[I * n + j1] = m[j1];
-			mat[J * n + j1] = m[n + j1];
-		}
-		// здесь перезаписываются значения для новой (единичной) матрицы
-		for (int j1 = 0; j1 < bndR; j1++)
-		{
-			tam[I * n + j1] = m[2*n+j1];
-			tam[J * n + j1] = m[3*n + j1];
-		}	
-	}
-				//multByRot(pargs->matrix,pargs->tamrix,pargs->mem,n,i,j,K,eps);
-				////cout << K << ' ' << "sec" << endl;
-				//	j++;
-				//skp =true ;
-				////cout << "Case 2    "<< i << ' ' << j << ' ' << K << endl;
-				return 0;
-}
 /////////////////////////////////////////////////////////////////////////
 void * trueUptriangleMat(void *pa)
 {
@@ -315,11 +43,8 @@ void * trueUptriangleMat(void *pa)
 	}
 
 	int L = (n-n%P)*(K-1)/P; // левая граница для потока ( L <= ... )
-	//int i_hat = 0;
-	// mtx.lock();
-	// cout << "K = " << K << ' ' << L << ' ' << R << endl;
-	// mtx.unlock();
-	synchronize((*pargs).total_threads);
+
+	synchronize(P);
 	i=L;
 
 	// к верхнетреугольной вращениями
@@ -423,16 +148,7 @@ void * trueUptriangleMat(void *pa)
 		mat[i*n+i]=1;
 	}
 
-	// for (int J = n - 1; J > 0; J--) // влево
-	// {
-	// 	for (int I = J - 1; I > -1; I--) // вверх
-	// 	{
-	// 		for (int j = 0; j < n; j++) // вправо
-	// 		{
-	// 			tam[I * n + j] -= mat[I * n + J] * tam[J * n + j];
-	// 		}
-	// 	}
-	// }
+
 	for (int J = n - 1; J > 0; J--) // влево
 	{
 		for (int j = K-1; j < n; j+=P) // вправо
@@ -448,35 +164,7 @@ void * trueUptriangleMat(void *pa)
 	return 0;	
 }
 ///////////////////////////////////////////////////
-int endSubUptriangleMat(void *pa)
-{
-	ARGS *pargs = (ARGS*)pa;
-	int i,j;
-	double eps = normByMaxMat(pargs->matrix, pargs->n);
-	//int K = pargs->thread_num;
-	int P = pargs->total_threads;
-	int n = pargs->n;
-	for (i = n - n%P+1; i < n-1; i++)
-	{
-		for (j = i+1; j < n; j++)
-		{
-			simpleMultByRot(pargs->matrix,pargs->tamrix,pargs->mem,n,i,j,eps);
-		}
-		for (int j = i + 1; j < n; j++)
-		{
-			pargs->matrix[j*n+i]=0;
-		}
-		if(abs(pargs-> matrix [i * n + i] ) < eps* 1e-15)
-		{
-			pargs->erc = 1;
-			return -1;
-		}
 
-	}
-	
-	return 0;
-
-}
 
 // функция которая вызовет треды
 int newMatInverse(void* pa, int nthreads)
@@ -782,4 +470,324 @@ void * multiSmartNormMat(void *pa)
 
 	}
 	return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool multByRot(double (*mat), double (*tam), double (*m), int n, int i, int &j, int K, int P, int &s, int &S, int eps)
+{
+	//bool skp = false;
+		if(s<2*(K-1))
+			{
+				s++;
+				return true;
+				////cout << K << ' ' << "first" << endl;
+				////cout << "Case 1    "<< i << ' ' << j << ' ' << K << endl;
+			}
+		else if(j<n)
+			{
+				double Cos, Sin, sq,x,y;
+	int I,J;
+	I = i;
+    J = j;
+	x = mat[I * n + I];
+	y = mat[J * n + I];
+	sq = sqrt(x * x + y * y);
+	if (sq > 1e-15*eps)
+	{
+		Cos = x / sq;
+		Sin = -y / sq;
+		// здесь считаются новые значения для старой матрицы
+		for (int j1 = I; j1 < n; j1++)
+		{
+			m[4*(K-1)+j1] = (Cos) * mat[I * n + j1] - (Sin) * mat[J * n + j1];
+			m[(1+4*(K-1))*n + j1] = (Sin) * mat[I * n + j1] + (Cos) * mat[J * n + j1];
+		}
+		// здесь перезаписываются значения для старой матрицы
+		for (int j1 = I; j1 < n; j1++)
+		{
+			mat[I * n + j1] = m[4*(K-1)+j1];
+			mat[J * n + j1] = m[(1+4*(K-1))*n + j1];
+		}
+		// здесь считаются новые значения для новой (единичной) матрицы
+		for (int j1 = 0; j1 < n; j1++)
+		{
+			m[(2+4*(K-1))*n + j1] = (Cos) * tam[I * n + j1] - (Sin) * tam[J * n + j1];
+			m[(3+4*(K-1))*n + j1] = (Sin) * tam[I * n + j1] + (Cos) * tam[J * n + j1];
+		}
+		// здесь перезаписываются значения для новой (единичной) матрицы
+		for (int j1 = 0; j1 < n; j1++)
+		{
+			tam[I * n + j1] = m[(2+4*(K-1))*n+j1];
+			tam[J * n + j1] = m[(3+4*(K-1))*n + j1];
+		}	
+	}
+				//multByRot(pargs->matrix,pargs->tamrix,pargs->mem,n,i,j,K,eps);
+				////cout << K << ' ' << "sec" << endl;
+				j++;
+				//skp =true ;
+				////cout << "Case 2    "<< i << ' ' << j << ' ' << K << endl;
+				return true;
+			}
+		else if(S<P-K)
+			{
+				S++;
+				return true;
+				////cout << "Case      "<< i << ' ' << j << ' ' << K << endl;
+				////cout << K << ' ' << "third" << endl;
+			}
+		else
+			{
+				////cout << K << ' ' << "fourth" << endl;
+				return false;
+			}
+	
+	////outMat1(mat,n,6);
+	////cout << i << ' ' << j << endl;
+	return true;
+}
+void simpleMultByRot(double (*mat), double (*tam), double (*m), int n, int i, int j, int eps)
+{
+	double Cos, Sin, sq,x,y;
+	int I,J;
+	I = i;
+    J = j;
+	x = mat[I * n + I];
+	y = mat[J * n + I];
+	sq = sqrt(x * x + y * y);
+	if (sq > 1e-15*eps)
+	{
+		Cos = x / sq;
+		Sin = -y / sq;
+		// здесь считаются новые значения для старой матрицы
+		for (int j1 = I; j1 < n; j1++)
+		{
+			m[j1] = (Cos) * mat[I * n + j1] - (Sin) * mat[J * n + j1];
+			m[n + j1] = (Sin) * mat[I * n + j1] + (Cos) * mat[J * n + j1];
+		}
+		// здесь перезаписываются значения для старой матрицы
+		for (int j1 = I; j1 < n; j1++)
+		{
+			mat[I * n + j1] = m[j1];
+			mat[J * n + j1] = m[n + j1];
+		}
+		// здесь считаются новые значения для новой (единичной) матрицы
+		for (int j1 = 0; j1 < n; j1++)
+		{
+			m[2*n + j1] = (Cos) * tam[I * n + j1] - (Sin) * tam[J * n + j1];
+			m[3*n + j1] = (Sin) * tam[I * n + j1] + (Cos) * tam[J * n + j1];
+		}
+		// здесь перезаписываются значения для новой (единичной) матрицы
+		for (int j1 = 0; j1 < n; j1++)
+		{
+			tam[I * n + j1] = m[2*n+j1];
+			tam[J * n + j1] = m[3*n + j1];
+		}	
+	}
+	////outMat1(mat,n,6);
+	////cout << i << ' ' << j << endl;
+}
+
+// уже поток 
+void * subUptriangleMat(void *pa)
+{
+	ARGS *pargs = (ARGS*)pa;
+	//double x,y, sq, Cos, Sin;
+	int i,j, S, s;
+	bool cycle = true;
+	int P = pargs->total_threads;
+	double eps = normByMaxMat(pargs->matrix, pargs->n)+1e-16;
+	mtx.lock();
+	pargs->thread_num++;
+	int K = pargs->thread_num;
+	mtx.unlock();
+	int n = pargs->n;
+	//происходит назначение на столбец
+	for (i = K-1; i < n - n%P; i+=P)
+	{
+		// происходит назначение на строку
+		//операция со строкой K+1-го потока начинается после того как
+		// K- ый поток пройдет K+2 строчку
+		cycle =true;
+		//for (j = i+1; j < n; j++)
+		j= i+1;
+		s=0, S=0;
+		while(cycle)
+		{
+			/*if(s<2*(K-1))
+			{
+				s++;
+				////cout << K << ' ' << "first" << endl;
+			}else if(j<n)
+			{
+				multByRot(pargs->matrix,pargs->tamrix,pargs->mem,n,i,j,K,eps);
+				////cout << K << ' ' << "sec" << endl;
+				j++;
+			}
+			else if(S<P-K)
+			{
+				S++;
+				////cout << K << ' ' << "third" << endl;
+			}
+			else
+			{
+				////cout << K << ' ' << "fourth" << endl;
+				cycle = false;
+			}*/
+			cycle = multByRot(pargs->matrix,pargs->tamrix,pargs->mem,n,i,j,K,P,s,S,eps);
+			////cout << K <<  " ready for sync" << endl;
+			synchronize(P);
+			if(pargs -> erc != 0)
+			{
+				return 0;
+			}
+			////cout << K <<  " synced" << endl;
+		}
+		pargs->exinum++;
+		for (int j = i + 1; j < n; j++)
+		{
+			pargs->matrix[j*n+i]=0;
+		}
+		////cout << i << ' ' << pargs-> matrix [i * n + i] << endl;
+		if(abs(pargs-> matrix [i * n + i] ) < eps* 1e-15)
+		{
+			pargs->erc = 1;
+			//pargs->to_finish = true;
+			////cout << "ERROR ? "<< pargs-> erc << endl;
+			return 0;
+		}
+	}
+	i=i-1;
+	////cout << "ERROR ? "<< pargs-> erc << endl;
+	////cout << " I is " << i << endl;
+	if(i==n-n%P-1)
+	{
+		////cout << " entered to final " << endl;
+		for (i = n - n%P+1; i < n-1; i++)
+		{
+			for (j = i+1; j < n; j++)
+			{
+				if(pargs -> erc != 0)
+				{
+					return 0;
+				}
+				simpleMultByRot(pargs->matrix,pargs->tamrix,pargs->mem,n,i,j,eps);
+			}
+			for (int j = i + 1; j < n; j++)
+			{
+				pargs->matrix[j*n+i]=0;
+			}
+			if(abs(pargs-> matrix [i * n + i] ) < eps* 1e-15)
+			{
+				pargs->erc = 1;
+				return 0;
+			}
+			/*
+			for(i_hat = i; i_hat<min(i+P,n-1);i_hat++)
+			{
+				for (j = i_hat + 1; j < n; j++)
+				{
+					mat[j*n+i_hat]=0;
+				}
+				if (abs(mat[i_hat * n + i_hat]) < eps* 1e-15)
+				{
+					////cout << i << ' ' << mat[i * n + i] << endl;
+					return -2;
+				}
+			}
+			*/
+		}
+		//pargs->to_finish = true;
+	
+	}
+	return 0;	
+}
+int trueRotByMat(double (*mat), double (*tam), double Cos, double Sin, double sq, double (*m), int bndR, int bndL, int n, int I, int J,int P, double eps)
+{
+
+	bool todate = false;
+	if (sq > 1e-15*eps)
+	{
+		// здесь считаются новые значения для старой матрицы
+		for (int j1 = bndL; j1 < bndR; j1++)
+		{
+			m[j1] = (Cos) * mat[I * n + j1] - (Sin) * mat[J * n + j1];
+			m[n + j1] = (Sin) * mat[I * n + j1] + (Cos) * mat[J * n + j1];
+		}
+				for (int j1 = 0; j1 < bndR; j1++)
+		{
+			m[2*n + j1] = (Cos) * tam[I * n + j1] - (Sin) * tam[J * n + j1];
+			m[3*n + j1] = (Sin) * tam[I * n + j1] + (Cos) * tam[J * n + j1];
+		}
+		// здесь перезаписываются значения для старой матрицы
+
+		// здесь считаются новые значения для новой (единичной) матрицы
+		todate =true;
+	}
+	//P = 0;
+	synchronize(P);
+	if(todate)
+	{
+		for (int j1 = bndL; j1 < bndR; j1++)
+		{
+			mat[I * n + j1] = m[j1];
+			mat[J * n + j1] = m[n + j1];
+		}
+		// здесь перезаписываются значения для новой (единичной) матрицы
+		for (int j1 = 0; j1 < bndR; j1++)
+		{
+			tam[I * n + j1] = m[2*n+j1];
+			tam[J * n + j1] = m[3*n + j1];
+		}	
+	}
+				//multByRot(pargs->matrix,pargs->tamrix,pargs->mem,n,i,j,K,eps);
+				////cout << K << ' ' << "sec" << endl;
+				//	j++;
+				//skp =true ;
+				////cout << "Case 2    "<< i << ' ' << j << ' ' << K << endl;
+				return 0;
+}
+int endSubUptriangleMat(void *pa)
+{
+	ARGS *pargs = (ARGS*)pa;
+	int i,j;
+	double eps = normByMaxMat(pargs->matrix, pargs->n);
+	//int K = pargs->thread_num;
+	int P = pargs->total_threads;
+	int n = pargs->n;
+	for (i = n - n%P+1; i < n-1; i++)
+	{
+		for (j = i+1; j < n; j++)
+		{
+			simpleMultByRot(pargs->matrix,pargs->tamrix,pargs->mem,n,i,j,eps);
+		}
+		for (int j = i + 1; j < n; j++)
+		{
+			pargs->matrix[j*n+i]=0;
+		}
+		if(abs(pargs-> matrix [i * n + i] ) < eps* 1e-15)
+		{
+			pargs->erc = 1;
+			return -1;
+		}
+
+	}
+	
+	return 0;
+
 }

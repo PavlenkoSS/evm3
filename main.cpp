@@ -5,7 +5,7 @@ using namespace std;
 
 // размер  количество выводимых строк, потоки, формула
 
-int main1(int nargs, char** args)
+int main(int nargs, char** args)
 {
 	if (nargs < 5)
 	{
@@ -148,15 +148,6 @@ delete[]M;
 
 
 
-int main(int nargs, char** args)
-{
-	while(true)
-{
-main1( nargs, args);
-}
-
-return 0;
-}
 
 
 
