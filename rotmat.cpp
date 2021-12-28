@@ -54,32 +54,55 @@ void * trueUptriangleMat(void *pa)
 		{
 			break;
 		}
-		synchronize(P);
+		//synchronize(P);
 		
 		if(K==1)
 		{
-			for (j = i+1; j < n; j++) // бежит вниз и считает синусы
-			{
-				int I,J;
-				I = i;
-				J = j;
-				x = mat[I * n + I];
-				y = mat[J * n + I];
-				sq = sqrt(x * x + y * y);
-				if(sq<1e-15*eps)
+			if(i%2==0){
+				for (j = i+1; j < n; j++) // бежит вниз и считает синусы
 				{
-					pargs -> erc = 1;
-					break;
+					int I,J;
+					I = i;
+					J = j;
+					x = mat[I * n + I];
+					y = mat[J * n + I];
+					sq = sqrt(x * x + y * y);
+					if(sq<1e-15*eps)
+					{
+						pargs -> erc = 1;
+						break;
+					}
+					Cos = x / sq;
+					Sin = -y / sq;
+
+					pargs->Coss[j] = Cos;
+					pargs->Sins[j] = Sin;
+					mat[I * n + I] = sq;
+					mat[J * n + I] = 0;
 				}
-				Cos = x / sq;
-				Sin = -y / sq;
+			}else
+			{
+				for (j = i+1; j < n; j++) // бежит вниз и считает синусы
+				{
+					int I,J;
+					I = i;
+					J = j;
+					x = mat[I * n + I];
+					y = mat[J * n + I];
+					sq = sqrt(x * x + y * y);
+					if(sq<1e-15*eps)
+					{
+						pargs -> erc = 1;
+						break;
+					}
+					Cos = x / sq;
+					Sin = -y / sq;
 
-				pargs->Coss[j] = Cos;
-				pargs->Sins[j] = Sin;
-
-				mat[I * n + I] = x*Cos - y*Sin;
-				mat[J * n + I] = x*Sin + y*Cos;
-				//cout << I << ' ' << J << "   " << Sin << ' ' << Cos << endl;
+					pargs->Coss[j+n] = Cos;
+					pargs->Sins[j+n] = Sin;
+					mat[I * n + I] = sq;
+					mat[J * n + I] = 0;
+				}
 			}
 			if(abs(mat [i * n + i] ) < eps * 1e-15)
 			{
@@ -92,29 +115,58 @@ void * trueUptriangleMat(void *pa)
 		{
 			break;
 		}
-		for (j = i+K; j < n; j+=P) // прыгает вправо
+		if(i%2==0)
 		{
-			for (j1 = i+1; j1 < n; j1++) // бежит вниз
+			for (j1 = i+1; j1 < n; j1++) //бежит вниз  
 			{
 				Cos = pargs->Coss[j1];
 				Sin = pargs->Sins[j1];
+				for (j = i+K; j < n; j+=P) // прыгает вправо
+				{
+					x = mat[i * n + j];
+					y = mat[j1 * n + j];
+					mat[i * n + j] = x*Cos - y*Sin;
+					mat[j1 * n + j] = x*Sin + y*Cos;
+				}		
+			}
+			for(j1 = i+1; j1<n;j1++)
+			{
+				Cos = pargs->Coss[j1];
+				Sin = pargs->Sins[j1];
+				for( j = K-1;j<n;j= j+P)  
+				{
+					x = tam[i * n + j];
+					y = tam[j1 * n + j];
+					tam[i * n + j] = x*Cos - y*Sin;
+					tam[j1 * n + j] = x*Sin + y*Cos;
+				}
+			}
+		}else
+		{
+			for (j1 = i+1; j1 < n; j1++) // прыгает вправо
+		{
+			Cos = pargs->Coss[j1+n];
+			Sin = pargs->Sins[j1+n];
+			for (j = i+K; j < n; j+=P) // бежит вниз 
+			{
 				x = mat[i * n + j];
 				y = mat[j1 * n + j];
 				mat[i * n + j] = x*Cos - y*Sin;
 				mat[j1 * n + j] = x*Sin + y*Cos;
 			}		
 		}
-		for(j = K-1;j<n;j= j+P)
+		for(j1 = i+1; j1<n;j1++)
 		{
-			for(j1 = i+1; j1<n;j1++)
+			Cos = pargs->Coss[j1+n];
+			Sin = pargs->Sins[j1+n];
+			for( j = K-1;j<n;j= j+P)  
 			{
-				Cos = pargs->Coss[j1];
-				Sin = pargs->Sins[j1];
 				x = tam[i * n + j];
 				y = tam[j1 * n + j];
 				tam[i * n + j] = x*Cos - y*Sin;
 				tam[j1 * n + j] = x*Sin + y*Cos;
 			}
+		}
 		}
 	}
 
